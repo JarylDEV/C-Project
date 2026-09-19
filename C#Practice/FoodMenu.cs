@@ -94,7 +94,7 @@ class Order
         Console.ReadKey();
 
         totalOrderSum = addedSum;
-    }
+    }   
 
     public void viewOrder()
     {
@@ -105,7 +105,7 @@ class Order
         {
             double price = menu[item.item]; 
             if (item.Extra == true) continue;               
-            Console.Write($"\n{i}.  {item.item}\n    Quantity: {item.itemQuantity}\n    Price: {price}\n    Total: {totalOrderSum}\n");
+            Console.Write($"\n{i}.  {item.item}\n    Quantity: {item.itemQuantity}\n    Price: {price}\n    Total: {price * item.itemQuantity}\n");
             i++; 
         }
 
@@ -124,16 +124,101 @@ class Order
         Console.ReadKey();
     }
 
+    public void checkout()
+    {
+        Console.Write("\n========================================\n              CUSTOMER TYPE              \n========================================\n");
+        Console.Write("\n[1] Regular Costumer\n[2] Senior Citizen\n[3] PWD\nEnter customer type: ");
+        int customer = Convert.ToInt32(Console.ReadLine());
+
+        if(customer == 1) // REGULAR
+        {
+            Console.WriteLine("\nDiscount: 0.00%");
+        } else if (customer == 2)  // SENIOR 
+        {
+            Console.WriteLine("\nDiscount: 20.0%");
+        } else if (customer == 3)  // PWD
+        {
+            Console.WriteLine("\nDiscount: 20.0%");
+        }
+    }
+
     public void updateOrder()
     {
-        Console.Write("Enter item to update: ");
-        string updateItem = Console.ReadLine().ToUpper();
+        Console.Write("\n========================================\n               UPDATE ORDER               \n========================================\n");
 
-        for (int i = 0; i < OrderedItem.Count; i++)
+        if (OrderedItem.Count == 0)
         {
-            if (updateItem == OrderedItem[i].item)
+            Console.WriteLine("\nThere's currently no order.\n Press any key to go back.");
+            Console.ReadKey();
+        } else
+        {
+            Console.Write("Enter item to update: ");
+            string updateItem = Console.ReadLine().ToUpper();
+
+            for (int i = 0; i < OrderedItem.Count; i++)
             {
-                
+                if (updateItem == OrderedItem[i].item)
+                {
+                    Console.Write($"\nCurrent Quantity: {OrderedItem[i].itemQuantity}");
+
+                    Console.Write("\nEnter new quantity: ");
+                    int newQty = Convert.ToInt32(Console.ReadLine());
+
+                    OrderedItem[i].itemQuantity = newQty;
+
+                    Console.WriteLine("\nUpdated Quantity succesfully.");
+                    computeOrder();
+                    break;
+                }
+            }
+        }
+    }
+
+    public void cancelItem()
+    {
+        int index = 1;
+        foreach (OrderItem item in OrderedItem)
+        {
+            Console.Write($"\n [{index}]      {item.item, -15}     x{item.itemQuantity}\n");
+            index++;
+        }
+
+        Console.Write("Enter item to cancel: ");
+        int cancelItem = Convert.ToInt32(Console.ReadLine());
+        int indexItem = cancelItem - 1;
+
+        if (indexItem >= 0 && indexItem < OrderedItem.Count)
+        {
+            string itemName = OrderedItem[indexItem].item;
+
+            OrderedItem.RemoveAt(indexItem);
+
+            Console.WriteLine($"\nSuccesfully removed {itemName}");
+            computeOrder();
+        }
+    }
+
+    public void cancelEntireOrder()
+    {
+        bool repeat = true;
+        Console.Write("Are you sure you want to cancel this order?\n[Y] Yes\n[N] No\nEnter Choice:");
+        string choice = Console.ReadLine();
+
+        while (repeat) 
+        {
+            if(choice.ToUpper() == "Y")
+            {
+                OrderedItem.Clear();
+                Console.WriteLine("\n ORDER HAS BEEN SUCCESFULLY REMOVED.");
+                computeOrder();
+                repeat = false;
+            } else if (choice.ToUpper() == "N")
+            {
+                repeat = false;
+            } else
+            {
+                Console.Write("\nInvalid input. Please try again.");
+                repeat = true;
             }
         }
     }
@@ -241,7 +326,6 @@ class Order
         }
     }
 
-
     public void addItem(string itemName, int itemQuantity)
     {
         string itemN = itemName.ToUpper();
@@ -299,18 +383,22 @@ class FoodMenu
                     }
                 case 4:
                     {
+                        order.updateOrder();
                         break;
                     }
                 case 5:
                     {
+                        order.cancelItem();
                         break;
                     }
                 case 6:
                     {
+                        order.cancelEntireOrder();
                         break;
                     }
                 case 7:
                     {
+
                         break;
                     }
                 case 8:
