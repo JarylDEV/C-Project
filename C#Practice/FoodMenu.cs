@@ -14,6 +14,18 @@ class OrderItem
     }
 }
 
+class Orders
+{
+    public string orderNumber {get; set;}
+    public string CustomerType { get; set; }
+    public double Subtotal { get; set; }
+    public double Discount { get; set; }
+    public double Total { get; set; }
+    public double AmountPaid { get; set; }
+    public double Change { get; set; }
+    public List<OrderItem> Items { get; set; }
+}
+
 class Menu
 {
     public void viewMenu()
@@ -37,9 +49,11 @@ class Menu
 }
 
 class Order
-{
+{   
     private double totalOrderSum = 0;
+    private int orderCount = 0;
     public List<OrderItem> OrderedItem = new List<OrderItem>();
+    public List<Orders> orderHistory = new List<Orders>();
     private Dictionary<string, double> menu = new Dictionary<string, double>
     {
         // MAIN DISH
@@ -74,7 +88,6 @@ class Order
     public void computeOrder()
     {
         double addedSum = 0;
-
         foreach (OrderItem item in OrderedItem)
         {
             if (menu.ContainsKey(item.item))
@@ -87,12 +100,9 @@ class Order
                 Console.Write($"\n> x{item.itemQuantity, -5} {item.item, -15} {totalMulti, 10}\n");
             }
         }
-
         Console.WriteLine($"\n------------------------------- --------------\n>    ITEM              TOTAL: {addedSum}\n");
-
         Console.WriteLine("\nPress any key to go back.");
         Console.ReadKey();
-
         totalOrderSum = addedSum;
     }   
 
@@ -124,22 +134,137 @@ class Order
         Console.ReadKey();
     }
 
-    public void checkout()
+    public void checkout( )
     {
-        Console.Write("\n========================================\n              CUSTOMER TYPE              \n========================================\n");
-        Console.Write("\n[1] Regular Costumer\n[2] Senior Citizen\n[3] PWD\nEnter customer type: ");
-        int customer = Convert.ToInt32(Console.ReadLine());
+        bool repeat = true;
+        string customerLabel = " ";
+        double discountPercent = 0.00;
 
-        if(customer == 1) // REGULAR
+        while(repeat)
         {
-            Console.WriteLine("\nDiscount: 0.00%");
-        } else if (customer == 2)  // SENIOR 
-        {
-            Console.WriteLine("\nDiscount: 20.0%");
-        } else if (customer == 3)  // PWD
-        {
-            Console.WriteLine("\nDiscount: 20.0%");
+            Console.Write("\n========================================\n              CUSTOMER TYPE              \n========================================\n");
+            Console.Write("\n[1] Regular Costumer\n[2] Senior Citizen\n[3] PWD\nEnter customer type: ");
+            int customer = Convert.ToInt32(Console.ReadLine());
+            if (customer == 1)
+            {
+                customerLabel = "Regular";
+                discountPercent = 0.00;
+                repeat = false;
+            }
+            else if (customer == 2)
+            {
+                customerLabel = "Senior Citizen";
+                discountPercent = 0.20;
+                repeat = false;
+            }
+            else if (customer == 3)
+            {
+                customerLabel = "PWD";
+                discountPercent = 0.20;
+                repeat = false;
+            } else
+            {
+                Console.WriteLine("\nInvalid input. Try again.");
+                repeat = true;
+            }
         }
+
+        double discountAmount = totalOrderSum * discountPercent;
+        double finalTotal = totalOrderSum - discountAmount;
+
+        Console.Write("\n========================================\n              CHECKOUT              \n========================================\n");
+        Console.Write($"\nCustomer Type: {customerLabel}\n");
+        Console.Write("\n-----------------------------------------\n");
+        foreach (OrderItem item in OrderedItem)
+        {
+            double itemPrice = menu[item.item];
+            double totalMulti = itemPrice * item.itemQuantity;
+
+            Console.Write($"\n> x{item.itemQuantity, -5} {item.item, -15} {totalMulti, -15}\n");
+        }
+        Console.Write("\n-----------------------------------------\n");
+        Console.Write($"\nSUBTOTAL: {totalOrderSum}\n");
+        Console.Write($"\n{customerLabel}: {discountPercent}\n");
+        Console.Write("\n-----------------------------------------\n");
+        Console.Write($"\nTOTAL: {finalTotal}\n");
+
+        double payment = 0;
+        while (payment < finalTotal)
+        {
+
+            Console.Write("Enter Payment: ");
+            payment = Convert.ToDouble(Console.ReadLine());
+
+            if(payment < finalTotal)
+            {
+                Console.Write("\n========================================\n              INSUFFICIENT PAYMENT              \n========================================\n");
+                Console.Write($"\nAmount: {finalTotal}");
+                Console.Write($"\nPayment: {payment}");
+                Console.Write($"\nRemaining: {finalTotal - payment}");
+                Console.WriteLine("\nPlease enter sufficient payment.");
+            }
+        }
+
+        double change = payment - finalTotal;
+        orderCount++;
+
+        string orderNumb = $"{orderCount:D4}";
+
+        // RECEIPT
+        Console.Write("\n========================================\n              KOPI BAR RECEIPT              \n========================================\n");
+        Console.Write($"\nORDER NUMBER: #{orderNumb}\n");
+        Console.Write("\n-----------------------------------------\n");
+        foreach (OrderItem item in OrderedItem)
+        {
+            double itemPrice = menu[item.item];
+            double totalMulti = itemPrice * item.itemQuantity;
+
+            Console.Write($"\n> x{item.itemQuantity, -5} {item.item, -15} {totalMulti, 15}\n");
+        }
+        Console.Write("\n-----------------------------------------\n");
+        Console.Write($"\nSUBTOTAL: {totalOrderSum}\n");
+        Console.Write($"\n{customerLabel}: {discountPercent}\n");
+        Console.Write("\n-----------------------------------------\n");
+        Console.Write($"\nTOTAL: {finalTotal, -35}\n");
+        Console.Write($"\nPAYMENT: {payment, -35}\n");
+        Console.Write($"\nCHANGE: {change, -35}\n");
+        Console.Write("\n========================================\n              THANK YOU COME AGAIN!              \n========================================\n");
+
+        Orders history = new Orders
+        {
+            CustomerType = customerLabel,
+            Subtotal = totalOrderSum,
+            AmountPaid = payment,
+            Total = finalTotal,
+            Change = change,
+            orderNumber = orderNumb,
+            Items = new List<OrderItem>(OrderedItem)
+        };
+
+        orderHistory.Add(history);
+
+        OrderedItem.Clear(); 
+        totalOrderSum = 0;
+        Console.Write("\nPress any key to exit.");
+        Console.ReadKey();
+    }
+
+    public void OrderHistory()
+    {
+        Console.Write("\n========================================\n              ORDER HISTORY              \n========================================\n");
+        foreach (Orders  order in orderHistory)
+        {
+            Console.Write($"\nOrder: {order.orderNumber}");
+            Console.Write($"\nCustomer Type: {order.CustomerType}");
+            Console.Write($"\nTotal: {order.Total}");
+            Console.Write("\n-----------------------------------------\n");
+        }
+        
+        Console.Write("\n========================================\n");
+        Console.Write($"Total completed orders: {orderHistory.Count}");
+
+        Console.Write("\nPress any key to exit.\n");
+        Console.ReadKey();
     }
 
     public void updateOrder()
@@ -225,12 +350,14 @@ class Order
 
     public void newOrder()
     {
+        bool itemRepeat = true;
         bool repeat = true;
         bool extraItemRepeat = true;
         while(repeat)
         {
             try
             {
+                    
                     Console.WriteLine("\n★====================✦===================★\n           NEW ORDER!           \n★====================✦===================★\n");
                     Console.Write("Enter item: ");
                     string ITEM = Console.ReadLine();
@@ -239,7 +366,7 @@ class Order
                     int ITEM_QUANTITY = Convert.ToInt32(Console.ReadLine());
 
                     addItem(ITEM, ITEM_QUANTITY);
-
+                    
                     Console.Write("Add another item? Y/N: ");
                     string ITEM_ADD = Console.ReadLine();
 
@@ -353,74 +480,75 @@ class FoodMenu
         Order order = new Order();
 
         bool loop = true;
-
-        try
-        {
             while (loop)
         {
-            Console.WriteLine("★====================✦===================★\n           KOPI BAR           \n★====================✦===================★\n");
-            Console.WriteLine("[1] Menu\n[2] New Order\n[3] View Order\n[4] Update Order\n[5] Cancel Item\n[6] Cancel Entire Order\n[7] Checkout\n[8] Order History\n[9] Exit\n");
-            Console.WriteLine("\n★====================✦=================== ★========================================★ ====================✦===================★\n");
-            Console.Write("Enter Choice: ");
-            int CASHIER_OPTION = Convert.ToInt32(Console.ReadLine());
-
-            switch (CASHIER_OPTION)
+            try
             {
-                case 1:
-                    {
-                        system.viewMenu();
-                        break;
-                    }
-                case 2:
-                    {
-                        order.newOrder();
-                        break;
-                    }
-                case 3:
-                    {
-                        order.viewOrder();
-                        break;
-                    }
-                case 4:
-                    {
-                        order.updateOrder();
-                        break;
-                    }
-                case 5:
-                    {
-                        order.cancelItem();
-                        break;
-                    }
-                case 6:
-                    {
-                        order.cancelEntireOrder();
-                        break;
-                    }
-                case 7:
-                    {
+                Console.WriteLine("\n★====================✦===================★\n           KOPI BAR           \n★====================✦===================★\n");
+                Console.WriteLine("[1] Menu\n[2] New Order\n[3] View Order\n[4] Update Order\n[5] Cancel Item\n[6] Cancel Entire Order\n[7] Checkout\n[8] Order History\n[9] Exit\n");
+                Console.WriteLine("\n★====================✦=================== ★========================================★ ====================✦===================★\n");
+                Console.Write("Enter Choice: ");
+                int CASHIER_OPTION = Convert.ToInt32(Console.ReadLine());
 
-                        break;
-                    }
-                case 8:
-                    {
-                        break;
-                    }
-                case 9:
-                    {
-                        loop = false;
-                        break;
-                    }
-                default:
-                    {
-                        Console.WriteLine("Something went wrong.");
-                        loop = false;
-                        break;
-                    }
+                switch (CASHIER_OPTION)
+                {
+                    case 1:
+                        {
+                            system.viewMenu();
+                            break;
+                        }
+                    case 2:
+                        {
+                            order.newOrder();
+                            break;
+                        }
+                    case 3:
+                        {
+                            order.viewOrder();
+                            break;
+                        }
+                    case 4:
+                        {
+                            order.updateOrder();
+                            break;
+                        }
+                    case 5:
+                        {
+                            order.cancelItem();
+                            break;
+                        }
+                    case 6:
+                        {
+                            order.cancelEntireOrder();
+                            break;
+                        }
+                    case 7:
+                        {
+                            order.checkout();
+                            break;
+                        }
+                    case 8:
+                        {
+                            order.OrderHistory();
+                            break;
+                        }
+                    case 9:
+                        {
+                            loop = false;
+                            break;
+                        }
+                    default:
+                        {
+                            Console.WriteLine("Something went wrong.");
+                            Console.WriteLine("Try again");
+                            loop = true;
+                            break;
+                        }
+                }
+            } catch (FormatException e)
+            {
+                Console.WriteLine($"\n{e.Message}");
             }
-        }
-        }catch(Exception e)
-        {
-            Console.WriteLine(e.Message);
         }
     }
 }
