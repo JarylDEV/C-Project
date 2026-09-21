@@ -263,7 +263,137 @@ class Order
         Console.Write("\n========================================\n");
         Console.Write($"Total completed orders: {orderHistory.Count}");
 
+        Console.Write("\n========================================\n              ORDER HISTORY              \n========================================\n");
+        int orderNumber = 1;
+
+        foreach (Orders order in orderHistory)
+        {
+            Console.Write($"\n[{orderNumber}] Order #{order.orderNumber}\n");
+            orderNumber++;
+        }
+        Console.Write($"\n[{orderNumber}] Back");
+
+        Console.Write("\nSelect an order: ");
+        int selectOrder = Convert.ToInt32(Console.ReadLine());
+
+        if (selectOrder == orderNumber)
+        {
+            return; // CHECKS KUNG ANG USER INPUT GA EQUAL SA NUMBER KA "BACK" IF TRUE THEN GA BALIK SA MENU
+        }
+
+        if (selectOrder >= 1 && selectOrder <= orderHistory.Count)
+        {
+            Orders selectedOrder = orderHistory[selectOrder - 1];
+
+            Console.Write($"\n========================================\n              Order Number: #{selectedOrder.orderNumber}              \n========================================\n");
+            Console.Write($"\nCustomer Type: #{selectedOrder.CustomerType}");
+            Console.Write("\n-----------------------------------------");
+            foreach (OrderItem item in selectedOrder.Items)
+            {
+                if(item.Extra != true) continue;
+                Console.Write($"\n{item.itemQuantity}x {item.item, -15}");
+            }
+
+            foreach (OrderItem item in selectedOrder.Items)
+            {
+                if(item.Extra == true) continue;
+                Console.Write($"\n{item.itemQuantity}x {item.item, -15}");
+            }
+            Console.Write("\n-----------------------------------------");
+            Console.Write($"\nSUBTOTAL: {selectedOrder.Subtotal}");
+            Console.Write($"\nDISCOUNT: {selectedOrder.Discount}");
+            Console.Write("\n==========================================");
+            Console.Write($"\nFINAL TOTAL: {selectedOrder.Total}");
+            Console.Write($"\nPAYMENT: {selectedOrder.AmountPaid}");
+            Console.Write($"\nCHANGE: {selectedOrder.Change}\n");
+        }
+        
         Console.Write("\nPress any key to exit.\n");
+        Console.ReadKey();
+    }
+
+    public void inventory()
+    {
+        if (orderHistory.Count == 0)
+        {
+            Console.WriteLine("\nThere's currently no order.\n Press any key to go back.");
+            Console.ReadKey();
+            return;
+        }
+        
+        double totalSale = 0;
+        double totalQuant = 0;
+        int pwd = 0;
+        int senior = 0;
+        int regular = 0;
+
+        List<OrderItem> allSoldItems = orderHistory.SelectMany(o => o.Items).ToList();
+
+        Console.Write("\n========================================\n              INVENTORY REPORT             \n========================================\n");
+
+        Console.Write($"{"Item", -20} {"Quantity"}");
+        Console.Write("\n---------------------------------------------");
+        foreach (OrderItem item in allSoldItems)
+        {
+            Console.Write($"\n{item.item} {item.itemQuantity, -20}");
+        }
+
+        foreach (OrderItem item in allSoldItems)
+        {
+            totalQuant += item.itemQuantity;
+        }
+        Console.Write("\n========================================");
+        Console.Write($"\n{"TOTAL ITEM SOLD:", -20} {totalQuant}\n");
+        Console.Write("\n========================================\n");
+
+        Console.Write("\n========================================\n              SALES SUMMARY             \n========================================\n");
+
+        foreach(Orders order in orderHistory)
+        {
+            double total = order.Total;
+
+            switch (order.CustomerType.ToLower())
+            {
+                case "senior citizen":
+                    {
+                        senior++;
+                        break;
+                    }
+                case "regular":
+                    {
+                        regular++;
+                        break;
+                    }
+                case "pwd":
+                    {
+                        pwd++;
+                        break;
+                    }
+            }
+
+            totalSale += total;
+        }
+
+        Console.Write($"\nCompleted Orders: {orderHistory.Count}\n");
+        Console.Write($"\nTotal Sales: P{totalSale}\n");
+        Console.Write($"\nRegular: {regular}");
+        Console.Write($"\nSenior Citizen: {senior}");
+        Console.Write($"\nPWD: {pwd}\n");
+        Console.Write("\n========================================\n");
+
+        Console.Write("\n========================================\n              BEST-SELLER             \n========================================\n");
+
+        if (allSoldItems.Any())
+        {
+            var quant = allSoldItems.MaxBy(x => x.itemQuantity);
+            if (quant != null)
+            {
+                Console.WriteLine($"Item: {quant.item}");
+                Console.WriteLine($"Quantity sold: {quant.itemQuantity}");
+            }
+        }
+
+        Console.Write("\nPress any key to exit.");
         Console.ReadKey();
     }
 
@@ -350,17 +480,34 @@ class Order
 
     public void newOrder()
     {
-        bool itemRepeat = true;
         bool repeat = true;
         bool extraItemRepeat = true;
+        string ITEM;
         while(repeat)
         {
             try
             {
-                    
+                if (OrderedItem.Count != 0)
+                {
+                    Console.Write("There's currently an order.");
+
+                    Console.Write("\nPress any key to go back.");
+                    Console.ReadKey();
+                    return;
+                }
+
+                do
+                {
                     Console.WriteLine("\n★====================✦===================★\n           NEW ORDER!           \n★====================✦===================★\n");
                     Console.Write("Enter item: ");
-                    string ITEM = Console.ReadLine();
+                    ITEM = Console.ReadLine().ToUpper();
+
+                    if (menu.ContainsKey(ITEM))
+                    {
+                        break;
+                    }
+                } while (true);
+                    
 
                     Console.Write("Enter quantity: ");
                     int ITEM_QUANTITY = Convert.ToInt32(Console.ReadLine());
@@ -455,20 +602,18 @@ class Order
 
     public void addItem(string itemName, int itemQuantity)
     {
-        string itemN = itemName.ToUpper();
 
-        Console.WriteLine($"{itemQuantity} {itemN} added.");
+        Console.WriteLine($"{itemQuantity} {itemName} added.");
 
-        OrderedItem.Add(new OrderItem(itemN, itemQuantity, false));
+        OrderedItem.Add(new OrderItem(itemName, itemQuantity, false));
     }
 
     public void addExtraItem(string itemName, int itemQuantity)
     {
-        string ExtraItemN = itemName.ToUpper();
 
-        Console.WriteLine($"{itemQuantity} {ExtraItemN} added.");
+        Console.WriteLine($"{itemQuantity} {itemName} added.");
 
-        OrderedItem.Add(new OrderItem(ExtraItemN, itemQuantity, true));
+        OrderedItem.Add(new OrderItem(itemName, itemQuantity, true));
     }
 }
 
@@ -485,7 +630,7 @@ class FoodMenu
             try
             {
                 Console.WriteLine("\n★====================✦===================★\n           KOPI BAR           \n★====================✦===================★\n");
-                Console.WriteLine("[1] Menu\n[2] New Order\n[3] View Order\n[4] Update Order\n[5] Cancel Item\n[6] Cancel Entire Order\n[7] Checkout\n[8] Order History\n[9] Exit\n");
+                Console.WriteLine("[1] Menu\n[2] New Order\n[3] View Order\n[4] Update Order\n[5] Cancel Item\n[6] Cancel Entire Order\n[7] Checkout\n[8] Order History\n[9] INVENTORY/SALES\n[10] Exit\n");
                 Console.WriteLine("\n★====================✦=================== ★========================================★ ====================✦===================★\n");
                 Console.Write("Enter Choice: ");
                 int CASHIER_OPTION = Convert.ToInt32(Console.ReadLine());
@@ -533,6 +678,11 @@ class FoodMenu
                             break;
                         }
                     case 9:
+                        {
+                            order.inventory();
+                            break;
+                        }
+                    case 10:
                         {
                             loop = false;
                             break;
